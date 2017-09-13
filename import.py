@@ -22,36 +22,11 @@ class DblpHandler(xml.sax.ContentHandler):
             print "***Article***"
             self.pubkey = attributes["key"]
             print "Pubkey:",self.pubkey
-            if self.CurrentData == "title":
-                print "Title: ",self.title
-            elif self.CurrentData =="journal":
-                print "Journal: ",self.journal
-            elif self.CurrentData == "year":
-                print "Year: ",self.year
-            elif self.CurrentData =="author":
-                print "Author: ",self.author 
-                #cur.execute("INSERT INTO authorship(pubkey, author) VALUES(%s, %s)", (pubkey , self.author))
-            #print pubkey, self.title, self.journal, self.year
-            cur.execute("INSERT INTO article(pubkey, title,journal, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.journal, self.year))
-
+        
         if tag == "inproceedings":
             print "***inproceedings***"
             self.pubkey = attributes["key"]
             print "Pubkey:",self.pubkey
-            if self.CurrentData == "title":
-                print "Title: ",self.title 
-            elif self.CurrentData == "year":
-                print "Year: ",self.year
-            elif self.CurrentData =="booktitle":
-                print "booktitle: ",self.booktitle
-            elif self.CurrentData =="author":
-                print "Author: ",self.author 
-            cur.execute("INSERT INTO inproceedings(pubkey, title,booktitle, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.booktitle, self.year))
-
-        #if tag == "authorship":
-        #    print "***authorship***"
-        #    pubkey = attributes["key"]
-        #    print "Pubkey:",pubkey
 
     def endElement(self, tag):
         if self.CurrentData == "title":
@@ -65,8 +40,13 @@ class DblpHandler(xml.sax.ContentHandler):
         elif self.CurrentData =="author":
             print "Author: ",self.author 
             cur.execute("INSERT INTO authorship(pubkey, author) VALUES(%s, %s)", (self.pubkey , self.author))
-            #print pubkey, self.title, self.journal, self.year
-        #cur.execute("INSERT INTO article(pubkey, title,journal, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.journal, self.year))
+
+        #insert into tables
+        if tag == "article":
+            cur.execute("INSERT INTO article(pubkey, title,journal, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.journal, self.year))
+
+        if tag == "inproceedings":
+            cur.execute("INSERT INTO inproceedings(pubkey, title,booktitle, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.booktitle, self.year))
         self.CurrentData = ""
 
     def characters(self, content):

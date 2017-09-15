@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import codecs
 import psycopg2
 import xml.sax
 import psycopg2.extras
@@ -7,6 +8,7 @@ con = None
 cur = None
 
 class DblpHandler(xml.sax.ContentHandler):
+
     def __init__(self):
         self.CurrentData = ""
         self.pubkey = ""
@@ -15,13 +17,15 @@ class DblpHandler(xml.sax.ContentHandler):
         self.year = None  
         self.booktitle = ""
         self.author = ""
+        self.tempAuthor = ""
+        self.hasSp = False
 
     def startElement (self, tag, attributes):
         self.CurrentData = tag
         if tag == "article":
-            print "***Article***"
+            #print "***Article***"
             self.pubkey = attributes["key"]
-            print "Pubkey:",self.pubkey
+            #print "Pubkey:",self.pubkey
         
         if tag == "inproceedings":
             print "***inproceedings***"
@@ -37,16 +41,30 @@ class DblpHandler(xml.sax.ContentHandler):
             print "booktitle: ",self.booktitle
         elif self.CurrentData =="journal":
             print "Journal: ",self.journal
-        elif self.CurrentData =="author":
+        if self.CurrentData =="author":
+            self.author = self.tempAuthor
+            self.tempAuthor = ""
             print "Author: ",self.author 
-            cur.execute("INSERT INTO authorship(pubkey, author) VALUES(%s, %s)", (self.pubkey , self.author))
+            try:
+                cur.execute("INSERT INTO authorship(pubkey, author) VALUES(%s, %s)", (self.pubkey , self.author))
+            except psycopg2.DatabaseError as e:
+                print e
+                return e.pgerror
 
         #insert into tables
         if tag == "article":
-            cur.execute("INSERT INTO article(pubkey, title,journal, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.journal, self.year))
-
+            try:
+                cur.execute("INSERT INTO article(pubkey, title,journal, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.journal, self.year))
+            except psycopg2.DatabaseError as e:
+                print e
+                return e.pgerror
         if tag == "inproceedings":
-            cur.execute("INSERT INTO inproceedings(pubkey, title,booktitle, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.booktitle, self.year))
+            try:
+                cur.execute("INSERT INTO inproceedings(pubkey, title,booktitle, year) VALUES(%s,%s,%s,%s)", (self.pubkey,self.title, self.booktitle, self.year))
+            except psycopg2.DatabaseError as e:
+                print e
+                return e.pgerror
+
         self.CurrentData = ""
 
     def characters(self, content):
@@ -59,7 +77,13 @@ class DblpHandler(xml.sax.ContentHandler):
         elif self.CurrentData =="journal":
             self.journal = content
         elif self.CurrentData =="author":
-            self.author = content
+            #if self.pubkey == "journals/acta/AbdullaHJLTV16":
+            #    print content, ", ",len(content)
+            self.tempAuthor += content
+            content = ""
+            #self.author = content.encode('utf-8')
+    
+
 if (__name__ == "__main__"):
     #Try to connect
     try:
@@ -74,19 +98,19 @@ if (__name__ == "__main__"):
     cur = conn.cursor()
     try: 
         cur.execute("DROP TABLE IF EXISTS authorship")
-        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey varchar(255),author varchar(255))")
+        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey text,author text)")
     except:
         print "Unable to create Table -- Authorship"
     
     try:
         cur.execute("DROP TABLE IF EXISTS inproceedings")
-        cur.execute("CREATE TABLE IF NOT EXISTS inproceedings (pubkey varchar(255),title varchar(255),booktitle varchar(255),year int)")
+        cur.execute("CREATE TABLE IF NOT EXISTS inproceedings(pubkey varchar(255),title text,booktitle varchar(255),year int)")
     except:
         print "Unable to create table -- inproceedings"
 
     try:
         cur.execute("DROP TABLE IF EXISTS article")
-        cur.execute("CREATE TABLE IF NOT EXISTS article(pubkey varchar(255),title varchar(511),journal varchar(255),year int)")
+        cur.execute("CREATE TABLE IF NOT EXISTS article(pubkey varchar(255),title text,journal varchar(255),year int)")
     except:
         print "Unable to create table -- article"
     #conn.commit()

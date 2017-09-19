@@ -87,7 +87,7 @@ class DblpHandler(xml.sax.ContentHandler):
 if (__name__ == "__main__"):
     #Try to connect
     try:
-        conn = psycopg2.connect(dbname = 'dblptest', user = 'dblpuser', password = 'password')
+        conn = psycopg2.connect(dbname = 'dblp', user = 'dblpuser', password = 'password')
         conn.autocommit = True
     except:
         print "Unable to connect the database"
@@ -98,19 +98,19 @@ if (__name__ == "__main__"):
     cur = conn.cursor()
     try: 
         cur.execute("DROP TABLE IF EXISTS authorship")
-        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey text,author text)")
+        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey text,author text), PRIMARY KEY(pubkey, author)")
     except:
         print "Unable to create Table -- Authorship"
     
     try:
         cur.execute("DROP TABLE IF EXISTS inproceedings")
-        cur.execute("CREATE TABLE IF NOT EXISTS inproceedings(pubkey varchar(255),title text,booktitle varchar(255),year int)")
+        cur.execute("CREATE TABLE IF NOT EXISTS inproceedings(pubkey varchar(255) PRIMARY KEY,title text,booktitle varchar(255),year int)")
     except:
         print "Unable to create table -- inproceedings"
 
     try:
         cur.execute("DROP TABLE IF EXISTS article")
-        cur.execute("CREATE TABLE IF NOT EXISTS article(pubkey varchar(255),title text,journal varchar(255),year int)")
+        cur.execute("CREATE TABLE IF NOT EXISTS article(pubkey varchar(255) PRIMARY KEY,title text,journal varchar(255),year int)")
     except:
         print "Unable to create table -- article"
     #conn.commit()

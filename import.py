@@ -23,14 +23,16 @@ class DblpHandler(xml.sax.ContentHandler):
     def startElement (self, tag, attributes):
         self.CurrentData = tag
         if tag == "article":
-            #print "***Article***"
+            print "***Article***"
             self.pubkey = attributes["key"]
-            #print "Pubkey:",self.pubkey
+            print "Pubkey:",self.pubkey
         
         if tag == "inproceedings":
             print "***inproceedings***"
             self.pubkey = attributes["key"]
             print "Pubkey:",self.pubkey
+        if tag == "author":
+            self.author = ""
 
     def endElement(self, tag):
         if self.CurrentData == "title":
@@ -41,9 +43,7 @@ class DblpHandler(xml.sax.ContentHandler):
             print "booktitle: ",self.booktitle
         elif self.CurrentData =="journal":
             print "Journal: ",self.journal
-        if self.CurrentData =="author":
-            self.author = self.tempAuthor
-            self.tempAuthor = ""
+        if tag =="author":
             print "Author: ",self.author 
             try:
                 cur.execute("INSERT INTO authorship(pubkey, author) VALUES(%s, %s)", (self.pubkey , self.author))
@@ -77,11 +77,9 @@ class DblpHandler(xml.sax.ContentHandler):
         elif self.CurrentData =="journal":
             self.journal = content
         elif self.CurrentData =="author":
-            #if self.pubkey == "journals/acta/AbdullaHJLTV16":
-            #    print content, ", ",len(content)
-            self.tempAuthor += content
-            content = ""
-            #self.author = content.encode('utf-8')
+            self.author = self.author+content
+            #self.tempAuthor += content
+            #content = ""
     
 
 if (__name__ == "__main__"):
@@ -98,7 +96,7 @@ if (__name__ == "__main__"):
     cur = conn.cursor()
     try: 
         cur.execute("DROP TABLE IF EXISTS authorship")
-        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey text,author text), PRIMARY KEY(pubkey, author)")
+        cur.execute("CREATE TABLE IF NOT EXISTS authorship(pubkey text,author text, PRIMARY KEY(pubkey, author))")
     except:
         print "Unable to create Table -- Authorship"
     

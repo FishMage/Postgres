@@ -4,6 +4,7 @@
 
 --CREATE VIEW journal as
 --CREATE VIEW conference as
+
 with conference as(
     SELECT COUNT(i.pubkey) as c_count, FLOOR(i.year/10)*10 as decades
     FROM inproceedings i
@@ -50,16 +51,6 @@ collaborate_inproceedings as(
     HAVING COUNT(*) = 1
   ),
 
--- Collaboration for both inproceedings& articles
--- Union of two views
---CREATE VIEW collaboration as
-collaboration as(
-    SELECT * 
-    FROM collaborate_article
-    UNION 
-    SELECT *
-    FROM collaborate_inproceedings
-  ),
 --author_decaces_area
 --CREATE VIEW database_dacades as
 database_dacades as(
@@ -103,10 +94,20 @@ author_decades_area as(
     SELECT * FROM systems_decades
     UNION
     SELECT * from mlai_decades
+  ),
+-- Collaboration for both inproceedings& articles
+-- Union of two views
+--CREATE VIEW collaboration as
+collaboration as(
+    SELECT * 
+    FROM collaborate_article
+    UNION 
+    SELECT *
+    FROM collaborate_inproceedings
   )
 
 --Final Result
-SELECT ada_col.decades, AVG(ada_col.col), ada_col.area
+SELECT ada_col.decades,AVG(ada_col.col), ada_col.area
 FROM
 (
   SELECT c.author as author, COUNT(c.collaborator) as col, c.decades as decades, ada.area as area
@@ -116,5 +117,41 @@ FROM
 ) as ada_col
 GROUP BY ada_col.decades, ada_col.area;
 
-
 --q4c
+with AuthorCount_paper_area_decade as(
+  SELECT i.pubkey as pubkey, FLOOR(i.year/10)*10 as decades, i.Area as area, COUNT(a.author) as numAuthor
+
+  FROM inproceedings i, authorship a 
+  WHERE FLOOR(i.year/10)*10 >= 1950 and i.Area != 'UNKNOWN' and i.pubkey = a.pubkey
+  GROUP BY i.pubkey, decades, i.area
+  ORDER BY decades ASC
+)
+SELECT apad.decades, apad.area, AVG(apad.numAuthor)
+FROM AuthorCount_paper_area_decade apad
+GROUP BY apad.decades, apad.area
+ORDER BY apad.decades ASC;
+
+--q4d
+-- datapoints
+with AuthorCount_paper_area_decade as(
+  SELECT i.pubkey as pubkey, FLOOR(i.year/10)*10 as decades, i.Area as area, COUNT(a.author) as numAuthor
+
+  FROM inproceedings i, authorship a 
+  WHERE FLOOR(i.year/10)*10 >= 1950 and i.Area != 'UNKNOWN' and i.pubkey = a.pubkey
+  GROUP BY i.pubkey, decades, i.area
+  ORDER BY decades ASC
+),
+area_decade_avgAuthor as (
+  SELECT apad.decades as x, apad.area as area, AVG(apad.numAuthor) as y
+  FROM AuthorCount_paper_area_decade apad
+  GROUP BY apad.decades, apad.area
+  ORDER BY apad.decades ASC
+)
+SELECT s.area, s.slope 
+FROM (
+  SELECT a.area ,(COUNT(a.x) *sum(a.x*a.y) - SUM(a.x)*SUM(a.y))/(COUNT(a.x)*SUM(a.x*a.x) - SUM(a.x)* SUM(a.x)) as slope
+  FROM area_decade_avgAuthor a
+  GROUP BY a.area
+) as s
+GROUP BY s.AREA, s.slope;
+

@@ -25,5 +25,5 @@ where booktitle = 'ICML' or booktitle = 'NIPS' or booktitle = 'AAAI' or booktitl
 
 --Set other to UNKOWN
 update inproceedings
-set AREA = 'UNKOWN'
+set AREA = 'UNKNOWN'
 where Area is NULL;

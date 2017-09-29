@@ -1,3 +1,8 @@
+#RESULTS:
+#AUTHORSHIP:10872613
+#ARTICLE: 1685783
+#INPROCEEDINGS:2032515
+
 #!/usr/bin/python
 import codecs
 import psycopg2

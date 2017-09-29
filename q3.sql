@@ -82,7 +82,7 @@ a_union_j_c as(
     FROM a_conference_2000
   )
 --find top 5 authors
-SELECT db.a_name, COUNT(u.pubkey) as a_count
+SELECT db.a_name
 FROM a_database as db, a_union_j_c as u
 WHERE db.a_name = u.a_name
 GROUP BY db.a_name
